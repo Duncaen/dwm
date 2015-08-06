@@ -2,27 +2,38 @@
 
 /* appearance */
 static const char *fonts[] = {
-    "Terminess Powerline:style=Regular:size=11",
-    "MaterialDesignIcons:size=12:antialias=true:hinting=true",
+    "Terminess Powerline:style=Regular:size=9",
+    "MaterialDesignIcons:size=9.2", // :antialias=false:hinting=false
 };
-#define NUMCOLORS 7
+
+#define normbordercolor "#383838"
+#define normbgcolor     "#181818"
+#define normfgcolor     "#D8D8D8"
+#define selbordercolor  "#7CAFC2"
+#define selbgcolor      "#383838"
+#define selfgcolor      "#D8D8D8"
+
+#define NUMCOLORS 15
 static const char colors[NUMCOLORS][3][8] = {
-    // border foreground background
-    { "#383838", "#D8D8D8", "#181818" }, // 1 = normal
-    { "#7CAFC2", "#D8D8D8", "#383838" }, // 2 = selected
-    { "#AB4642", "#D8D8D8", "#AB4642" }, // 3 = urgent ? background
-    { "#444444", "#A1B56C", "#181818" }, // 4 = green text
-    { "#444444", "#AB4642", "#181818"}, // 5 = red text
-    { "#444444", "#F7CA88", "#181818"}, // 6 = yellow text
-    { "#444444", "#383838", "#181818"}, // 7 = normal
+    // border          foreground   background
+    { normbordercolor, normfgcolor, normbgcolor }, // 1 normal
+    { selbordercolor,  selfgcolor,  selbgcolor  }, // 2 selected
+    { "#AB4642",       normfgcolor, "#AB4642"   }, // 3 urgent
+    { normbordercolor, "#A1B56C",   normbgcolor }, // 4 normal green text
+    { normbordercolor, "#AB4642",   normbgcolor }, // 5 normal red text
+    { normbordercolor, "#F7CA88",   normbgcolor }, // 6 normal yellow text
+    { selbordercolor,  "#A1B56C",   selbgcolor  }, // 7 selected green text
+    { selbordercolor,  "#AB4642",   selbgcolor  }, // 8 selected red text
+    { selbordercolor,  "#F7CA88",   selbgcolor  }, // 9 selected  yellow text
+    { normbordercolor, normfgcolor, "#A1B56C"   }, // 10 normal green background
+    { normbordercolor, normfgcolor, "#AB4642"   }, // 11 normal red background
+    { normbordercolor, normfgcolor, "#F7CA88"   }, // 12 nromal yellow background
+    { selbordercolor,  selfgcolor,  "#A1B56C"   }, // 13 normal green background
+    { selbordercolor,  selfgcolor,  "#AB4642"   }, // 14 normal red background
+    { selbordercolor,  selfgcolor,  "#F7CA88"   }  // 15 nromal yellow background
 };
+
 static const char dmenufont[] = "-*-terminus-medium-r-*-*-16-*-*-*-*-*-*-*";
-// static const char normbordercolor[] = "#383838";
-// static const char normbgcolor[]     = "#181818";
-// static const char normfgcolor[]     = "#D8D8D8";
-static const char selbordercolor[]  = "#7CAFC2";
-static const char selbgcolor[]      = "#383838";
-static const char selfgcolor[]      = "#D8D8D8";
 static const unsigned int borderpx  = 1;        /* border pixel of windows */
 static const unsigned int snap      = 32;       /* snap pixel */
 static const Bool showbar           = True;     /* False means no bar */
@@ -34,7 +45,7 @@ static const Bool topbar            = True;     /* False means bottom bar */
 #define ICON_BROWSER "\uF2CF"
 #define ICON_VM "\uF26B"
 
-#define ICON_1 "\uF3F8"
+static const char ICON_1[] = "\uF3F8";
 #define ICON_2 "\uF3FD"
 #define ICON_3 "\uF400"
 #define ICON_4 "\uF403"
