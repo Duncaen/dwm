@@ -233,6 +233,10 @@ static int xerror(Display *dpy, XErrorEvent *ee);
 static int xerrordummy(Display *dpy, XErrorEvent *ee);
 static int xerrorstart(Display *dpy, XErrorEvent *ee);
 static void zoom(const Arg *arg);
+static void movex(const Arg *arg);
+static void movey(const Arg *arg);
+static void resizew(const Arg *arg);
+static void resizeh(const Arg *arg);
 
 /* variables */
 static const char broken[] = "broken";
@@ -2122,6 +2126,46 @@ zoom(const Arg *arg)
 		if (!c || !(c = nexttiled(c->next)))
 			return;
 	pop(c);
+}
+
+void
+movex(const Arg *arg)
+{
+	Client *c = selmon->sel;
+
+	if (!c->isfloating)
+		return;
+	resize(c, c->x + arg->i, c->y, c->w, c->h, 1);
+}
+
+void
+movey(const Arg *arg)
+{
+	Client *c = selmon->sel;
+
+	if (!c->isfloating)
+		return;
+	resize(c, c->x, c->y + arg->i, c->w, c->h, 1);
+}
+
+void
+resizew(const Arg *arg)
+{
+	Client *c = selmon->sel;
+
+	if (!c->isfloating)
+		return;
+	resize(c, c->x, c->y, c->w + arg->i, c->h, 1);
+}
+
+void
+resizeh(const Arg *arg)
+{
+	Client *c = selmon->sel;
+
+	if (!c->isfloating)
+		return;
+	resize(c, c->x, c->y, c->w, c->h + arg->i, 1);
 }
 
 int
