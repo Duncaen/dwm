@@ -143,7 +143,7 @@ typedef struct {
 
 /* function declarations */
 static void applyrules(Client *c);
-static int applysizehints(Client *c, int *x, int *y, int *w, int *h, int interact);
+static int applysizehints(Client *c, int *x, int *y, int *w, int *h, int grow, int interact);
 static void arrange(Monitor *m);
 static void arrangemon(Monitor *m);
 static void attach(Client *c);
@@ -188,7 +188,7 @@ static void pop(Client *);
 static void propertynotify(XEvent *e);
 static void quit(const Arg *arg);
 static Monitor *recttomon(int x, int y, int w, int h);
-static void resize(Client *c, int x, int y, int w, int h, int interact);
+static void resize(Client *c, int x, int y, int w, int h, int grow, int interact);
 static void resizeclient(Client *c, int x, int y, int w, int h);
 static void resizemouse(const Arg *arg);
 static void restack(Monitor *m);
@@ -316,7 +316,7 @@ applyrules(Client *c)
 }
 
 int
-applysizehints(Client *c, int *x, int *y, int *w, int *h, int interact)
+applysizehints(Client *c, int *x, int *y, int *w, int *h, int grow, int interact)
 {
 	int baseismin;
 	Monitor *m = c->mon;
@@ -366,10 +366,17 @@ applysizehints(Client *c, int *x, int *y, int *w, int *h, int interact)
 			*h -= c->baseh;
 		}
 		/* adjust for increment value */
-		if (c->incw)
-			*w -= *w % c->incw;
-		if (c->inch)
-			*h -= *h % c->inch;
+		if (grow) {
+			if (c->incw)
+				*w += *w % c->incw;
+			if (c->inch)
+				*h += *h % c->inch;
+		} else {
+			if (c->incw)
+				*w -= *w % c->incw;
+			if (c->inch)
+				*h -= *h % c->inch;
+		}
 		/* restore base dimensions */
 		*w = MAX(*w + c->basew, c->minw);
 		*h = MAX(*h + c->baseh, c->minh);
@@ -1117,7 +1124,7 @@ monocle(Monitor *m)
 	if (n > 0) /* override layout symbol */
 		snprintf(m->ltsymbol, sizeof m->ltsymbol, "[%d]", n);
 	for (c = nexttiled(m->clients); c; c = nexttiled(c->next))
-		resize(c, m->wx, m->wy, m->ww - 2 * c->bw, m->wh - 2 * c->bw, 0);
+		resize(c, m->wx, m->wy, m->ww - 2 * c->bw, m->wh - 2 * c->bw, 0, 0);
 }
 
 void
@@ -1185,7 +1192,8 @@ movemouse(const Arg *arg)
 			&& (abs(nx - c->x) > snap || abs(ny - c->y) > snap))
 				togglefloating(NULL);
 			if (!selmon->lt[selmon->sellt]->arrange || c->isfloating)
-				resize(c, nx, ny, c->w, c->h, 1);
+				resize(c, nx, ny, c->w, c->h, 0, 1);
+			/* XXX: check grow or shrink */
 			break;
 		}
 	} while (ev.type != ButtonRelease);
@@ -1271,9 +1279,9 @@ recttomon(int x, int y, int w, int h)
 }
 
 void
-resize(Client *c, int x, int y, int w, int h, int interact)
+resize(Client *c, int x, int y, int w, int h, int grow, int interact)
 {
-	if (applysizehints(c, &x, &y, &w, &h, interact))
+	if (applysizehints(c, &x, &y, &w, &h, grow, interact))
 		resizeclient(c, x, y, w, h);
 }
 
@@ -1335,7 +1343,8 @@ resizemouse(const Arg *arg)
 					togglefloating(NULL);
 			}
 			if (!selmon->lt[selmon->sellt]->arrange || c->isfloating)
-				resize(c, c->x, c->y, nw, nh, 1);
+				resize(c, c->x, c->y, nw, nh, 0, 1);
+			/* XXX: check grow or shrink */
 			break;
 		}
 	} while (ev.type != ButtonRelease);
@@ -1633,7 +1642,7 @@ showhide(Client *c)
 		/* show clients top down */
 		XMoveWindow(dpy, c->win, c->x, c->y);
 		if ((!c->mon->lt[c->mon->sellt]->arrange || c->isfloating) && !c->isfullscreen)
-			resize(c, c->x, c->y, c->w, c->h, 0);
+			resize(c, c->x, c->y, c->w, c->h, 0, 0);
 		showhide(c->snext);
 	} else {
 		/* hide clients bottom up */
@@ -1701,11 +1710,11 @@ tile(Monitor *m)
 	for (i = my = ty = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
 		if (i < m->nmaster) {
 			h = (m->wh - my) / (MIN(n, m->nmaster) - i);
-			resize(c, m->wx, m->wy + my, mw - (2*c->bw), h - (2*c->bw), 0);
+			resize(c, m->wx, m->wy + my, mw - (2*c->bw), h - (2*c->bw), 0, 0);
 			my += HEIGHT(c);
 		} else {
 			h = (m->wh - ty) / (n - i);
-			resize(c, m->wx + mw, m->wy + ty, m->ww - mw - (2*c->bw), h - (2*c->bw), 0);
+			resize(c, m->wx + mw, m->wy + ty, m->ww - mw - (2*c->bw), h - (2*c->bw), 0, 0);
 			ty += HEIGHT(c);
 		}
 }
@@ -1729,7 +1738,7 @@ togglefloating(const Arg *arg)
 	selmon->sel->isfloating = !selmon->sel->isfloating || selmon->sel->isfixed;
 	if (selmon->sel->isfloating)
 		resize(selmon->sel, selmon->sel->x, selmon->sel->y,
-			selmon->sel->w, selmon->sel->h, 0);
+		       selmon->sel->w, selmon->sel->h, 0, 0);
 	arrange(selmon);
 }
 
@@ -2145,7 +2154,7 @@ movex(const Arg *arg)
 
 	if (!c->isfloating)
 		return;
-	resize(c, c->x + arg->i, c->y, c->w, c->h, 1);
+	resize(c, c->x + arg->i, c->y, c->w, c->h, (c->x + arg->i > c->x), 1);
 }
 
 void
@@ -2155,7 +2164,7 @@ movey(const Arg *arg)
 
 	if (!c->isfloating)
 		return;
-	resize(c, c->x, c->y + arg->i, c->w, c->h, 1);
+	resize(c, c->x, c->y + arg->i, c->w, c->h, (c->y + arg->i > c->y), 1);
 }
 
 void
@@ -2165,7 +2174,7 @@ resizew(const Arg *arg)
 
 	if (!c->isfloating)
 		return;
-	resize(c, c->x, c->y, c->w + arg->i, c->h, 1);
+	resize(c, c->x, c->y, c->w + arg->i, c->h, (c->w + arg->i > c->w), 1);
 }
 
 void
@@ -2175,7 +2184,7 @@ resizeh(const Arg *arg)
 
 	if (!c->isfloating)
 		return;
-	resize(c, c->x, c->y, c->w, c->h + arg->i, 1);
+	resize(c, c->x, c->y, c->w, c->h + arg->i, (c->h + arg->i > c->h), 1);
 }
 
 int
