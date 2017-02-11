@@ -1245,7 +1245,6 @@ propertynotify(XEvent *e)
 			break;
 		case XA_WM_HINTS:
 			updatewmhints(c);
-			drawbars();
 			break;
 		}
 		if (ev->atom == XA_WM_NAME || ev->atom == netatom[NetWMName]) {
@@ -1365,7 +1364,6 @@ restack(Monitor *m)
 	XEvent ev;
 	XWindowChanges wc;
 
-	drawbar(m);
 	if (!m->sel)
 		return;
 	if (m->sel->isfloating || !m->lt[m->sellt]->arrange)
@@ -1521,8 +1519,7 @@ setlayout(const Arg *arg)
 	strncpy(selmon->ltsymbol, selmon->lt[selmon->sellt]->symbol, sizeof selmon->ltsymbol);
 	if (selmon->sel)
 		arrange(selmon);
-	else
-		drawbar(selmon);
+	drawbar(selmon);
 }
 
 /* arg > 1.0 will set mfact absolutely */
@@ -1740,6 +1737,7 @@ togglefloating(const Arg *arg)
 		resize(selmon->sel, selmon->sel->x, selmon->sel->y,
 		       selmon->sel->w, selmon->sel->h, 0, 0);
 	arrange(selmon);
+	drawbar(selmon);
 }
 
 void
@@ -2047,8 +2045,10 @@ updatewmhints(Client *c)
 			XSetWMHints(dpy, c->win, wmh);
 		} else {
 			c->isurgent = (wmh->flags & XUrgencyHint) ? 1 : 0;
-			if (c->isurgent)
+			if (c->isurgent) {
 				XSetWindowBorder(dpy, c->win, scheme[SchemeUrg][ColBorder].pixel);
+				drawbar(c->mon);
+			}
 		}
 		if (wmh->flags & InputHint)
 			c->neverfocus = !wmh->input;
