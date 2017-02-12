@@ -7,13 +7,15 @@ typedef struct {
 typedef struct Fnt {
 	Display *dpy;
 	unsigned int h;
-	XftFont *xfont;
-	FcPattern *pattern;
+	unsigned int ascent;
+	unsigned int descent;
+	XFontStruct *xfont;
+	XFontSet set;
 	struct Fnt *next;
 } Fnt;
 
 enum { ColFg, ColBg, ColBorder }; /* Clr scheme index */
-typedef XftColor Clr;
+typedef XColor Clr;
 
 typedef struct {
 	unsigned int w, h;

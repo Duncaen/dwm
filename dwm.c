@@ -39,7 +39,6 @@
 #ifdef XINERAMA
 #include <X11/extensions/Xinerama.h>
 #endif /* XINERAMA */
-#include <X11/Xft/Xft.h>
 
 #include "drw.h"
 #include "util.h"
