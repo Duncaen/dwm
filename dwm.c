@@ -28,6 +28,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <time.h>
+#include <sys/select.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <X11/cursorfont.h>
@@ -89,7 +91,7 @@ struct Client {
 	int x, y, w, h;
 	int oldx, oldy, oldw, oldh;
 	int basew, baseh, incw, inch, maxw, maxh, minw, minh;
-	int bw, oldbw;
+	int bw, curbw, oldbw;
 	unsigned int tags;
 	int isfixed, isfloating, isurgent, neverfocus, oldstate, isfullscreen;
 	Client *next;
@@ -271,6 +273,7 @@ static Display *dpy;
 static Drw *drw;
 static Monitor *mons, *selmon;
 static Window root, wmcheckwin;
+static time_t lastupd, now;
 
 /* configuration, allows nested code to access above variables */
 #include "config.h"
@@ -387,7 +390,7 @@ applysizehints(Client *c, int *x, int *y, int *w, int *h, int grow, int interact
 		if (c->maxh)
 			*h = MIN(*h, c->maxh);
 	}
-	return *x != c->x || *y != c->y || *w != c->w || *h != c->h;
+	return *x != c->x || *y != c->y || *w != c->w || *h != c->h || c->curbw != c->bw;
 }
 
 void
@@ -1295,7 +1298,7 @@ resizeclient(Client *c, int x, int y, int w, int h)
 	c->oldy = c->y; c->y = wc.y = y;
 	c->oldw = c->w; c->w = wc.width = w;
 	c->oldh = c->h; c->h = wc.height = h;
-	wc.border_width = c->bw;
+	c->curbw = wc.border_width = c->bw;
 	XConfigureWindow(dpy, c->win, CWX|CWY|CWWidth|CWHeight|CWBorderWidth, &wc);
 	configure(c);
 	XSync(dpy, False);
@@ -1387,11 +1390,28 @@ void
 run(void)
 {
 	XEvent ev;
+	fd_set readset;
+	struct timeval tv = {60, 0};
+	int fd = ConnectionNumber(dpy);
+	lastupd = 0;
 	/* main event loop */
 	XSync(dpy, False);
-	while (running && !XNextEvent(dpy, &ev))
+	while (running) {
+		now = time(NULL);
+		if (difftime(now, lastupd) >= 15)
+			updatestatus();
+		if (XPending(dpy) == 0) {
+			tv.tv_sec = 15-(now % 15);
+			FD_ZERO(&readset);
+			FD_SET(fd, &readset);
+			if (select(fd+1, &readset, NULL, NULL, &tv) == 0)
+				continue;
+		}
+		if (XNextEvent(dpy, &ev))
+			break;
 		if (handler[ev.type])
 			handler[ev.type](&ev); /* call handler */
+	}
 }
 
 void
@@ -2014,9 +2034,22 @@ updatesizehints(Client *c)
 void
 updatestatus(void)
 {
-	if (!gettextprop(root, XA_WM_NAME, stext, sizeof(stext)))
-		strcpy(stext, "dwm-"VERSION);
+	char date[sizeof ("Mon 29 Apr 14:59")];
+	struct tm *timtm;
+	double avgs[3];
+	lastupd = now;
+	/* if (!gettextprop(root, XA_WM_NAME, stext, sizeof(stext))) */
+	/* 	strcpy(stext, "dwm-"VERSION); */
+	if (!(timtm = localtime(&now)) ||
+	    !strftime(date, sizeof date, "%a %d %b %H:%M", timtm))
+		*date = '\0';
+	if (getloadavg(avgs, 3) == -1)
+		avgs[0] = avgs[1] = avgs[2] = 0;
+	snprintf(stext, sizeof stext,
+		" %.2f %.2f %.2f | %s ",
+		avgs[0], avgs[1], avgs[2], date);
 	drawbar(selmon);
+	/* fprintf(stderr, "%s\n", stext); */
 }
 
 void
