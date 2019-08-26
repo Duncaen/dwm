@@ -29,22 +29,12 @@ static const Rule rules[] = {
 	 *	WM_CLASS(STRING) = instance, class
 	 *	WM_NAME(STRING) = title
 	 */
-	/* class      instance    title       tags mask     isfloating   monitor */
-	{ "st-256color", NULL,       NULL,       0,            0,       -1,    },
-	{ "Firefox",      NULL,       NULL,       1 << 6,       0,       -1,    },
-	{ "Chromium",     NULL,       NULL,       1 << 6,       0,       -1,    },
-	{ "Thunderbird",  NULL,       NULL,       1 << 5,       0,       -1,    },
-	{ "Spotify",      NULL,       NULL,       1 << 4,       0,       -1,    },
-	{ "Tomahawk",     NULL,       NULL,       1 << 4,       0,       -1,    },
-	{ "Vlc",          NULL,       NULL,       1 << 4,       0,       -1,    },
-	{ "mpv",          NULL,       NULL,       1 << 4,       0,       -1,    },
-	{ "VirtualBox",   NULL,       NULL,       1 << 7,       0,       -1,    },
-	{ "VBoxSDL",      NULL,       NULL,       1 << 7,       0,       -1,    },
-	{ "mixer",        NULL,       NULL,       0,            1,       -1,    },
-	{ "feh",          NULL,       NULL,       0,            1,       -1,    },
-	{ "Steam",        NULL,       NULL,       1 << 8,       1,       -1,    },
-	{ NULL,           NULL,       "Steam",    1 << 8,       1,       -1,    },
-	{ "dota2",        NULL,       NULL,       1 << 8,       1,       -1,    },
+	/* class      instance    title       tags mask     isfloating   monitor  border */
+	{ "termainl-pi",  NULL,       NULL,       1 << 0,       0,       -1,      1 },
+	{ "terminal",     NULL,       NULL,       1 << 1,       0,       -1,      1 },
+	{ "Firefox",      NULL,       NULL,       1 << 6,       0,       -1,      1 },
+	{ "Chromium",     NULL,       NULL,       1 << 6,       0,       -1,      1 },
+	{ "mpv",          NULL,       NULL,       1 << 4,       0,       -1,      1 },
 };
 
 /* layout(s) */
@@ -73,8 +63,9 @@ static const Layout layouts[] = {
 
 /* commands */
 static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
-static const char *dmenucmd[] = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", normbgcolor, "-nf", normfgcolor, "-sb", selbgcolor, "-sf", selfgcolor, NULL };
-static const char *termcmd[]  = { "st", "-e", "tmux", NULL };
+static const char *dmenucmd[] = { "dmenu_run", "-m", dmenumon, NULL };
+static const char *sshcmd[] = { "dmenu_ssh", "-m", dmenumon, NULL };
+static const char *termcmd[]  = { "st", "-c", "terminal", "-e", "tmux", NULL };
 
 static Key keys[] = {
 	/* modifier                     key        function        argument */
@@ -95,6 +86,7 @@ static Key keys[] = {
 	{ MODKEY|Mod1Mask|ShiftMask,    XK_l,      resizew,        {.i = +1 } },
 	{ MODKEY|Mod1Mask|ShiftMask,    XK_h,      resizew,        {.i = -1 } },
 	{ MODKEY,                       XK_p,      spawn,          {.v = dmenucmd } },
+	{ MODKEY,                       XK_s,      spawn,          {.v = sshcmd } },
 	{ MODKEY|ShiftMask,             XK_Return, spawn,          {.v = termcmd } },
 	{ MODKEY,                       XK_b,      togglebar,      {0} },
 	{ MODKEY,                       XK_j,      focusstack,     {.i = +1 } },
